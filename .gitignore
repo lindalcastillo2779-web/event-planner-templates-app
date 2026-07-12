@@ -1,0 +1,7 @@
+.local/
+**/.DS_Store
+**/*.log
+events_app/build/
+events_app/.dart_tool/
+events_app/.flutter-plugins
+events_app/.flutter-plugins-dependencies
