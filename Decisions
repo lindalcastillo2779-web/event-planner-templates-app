@@ -1,0 +1,7 @@
+# DECISIONS.log — new entries (append to existing file)
+
+2026-07-12 · D-016 · Storage: drift (SQLite) replaces shared_preferences as the local database. Rationale: roadmap is relational (guests ↔ events ↔ RSVPs, budget line items, seating assignments); switching now costs one session with zero customers, switching later costs migration code against live customer data. shared_preferences implementation in the current scaffold is to be replaced during BRIEF-001 execution — no data migration needed since no users exist. Supersedes the "drift or isar — pick one" open choice in BRIEF-001. — Owner, Architect recommendation
+
+2026-07-12 · D-017 · Web strategy: proplanners.app is a FREE browser demo + marketing landing page, not a paid product. Revenue flows exclusively through App Store / Google Play IAP in v1 (preserves D-006 store-console pricing and D-007 offline-first/no-account). Web-direct payments (Stripe + backend + accounts) deferred to v1.x, to be revisited when store revenue justifies the added scope, hosting cost, and merchant-of-record obligations. — Owner, after Architect tradeoff review
+
+2026-07-12 · D-018 · Style-tile image (IMG_4514) documented as pre-rev-A reference: it shows slate #4A4E58 and pill buttons, which D-015 superseded. Builders follow BRIEF-001 token text (graphite #2B2B2E, 4px rounded-rectangle buttons); the image is layout/mood reference only. README carries a warning to this effect. — Architect
