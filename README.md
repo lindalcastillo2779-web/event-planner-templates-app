@@ -56,6 +56,12 @@ https://www.proplanners.app is the **free browser demo and marketing site**. It 
 
 Note: GitHub Pages on a **private** repository requires a paid GitHub plan. If your Pages deployment isn't appearing, check the repo's visibility and your plan.
 
+### Troubleshooting: "Get Pages site failed" / domain shows nothing
+
+If the deploy workflow fails at the **Setup Pages** step with `Get Pages site failed ... Not Found`, it means GitHub Pages has never been enabled for the repository, so nothing was ever published — and your custom domain will show nothing. The workflow now passes `enablement: true` to `actions/configure-pages`, which enables Pages automatically on the next run. You can also enable it manually in **Settings → Pages** by setting Source to **GitHub Actions**, then re-run the **Deploy Flutter Web to GitHub Pages** workflow.
+
+Remember: with GitHub Actions deployments, the custom domain must be set in **Settings → Pages → Custom domain** (a CNAME file in the artifact is not used). Until a deploy succeeds *and* the custom domain is saved there, https://www.proplanners.app will not resolve to the site.
+
 ### Connect the Namecheap custom domain
 
 1. In Namecheap, open **Domain List → Manage → Advanced DNS**.
