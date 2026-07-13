@@ -1,0 +1,91 @@
+# FILE MANIFEST — Every file to add to the repository
+_All files live inside the `events_app/` folder of your repo, at the exact
+paths shown. The zip (events_app_champagne_revA.zip) contains all of them
+already in the right folder structure — unzip it into `events_app/` and
+you're done. This manifest is the labeled index._
+
+---
+
+## FRONT END — what the user sees and touches
+
+**F1 · App Entry & Shell**
+`lib/main.dart` — Starts the app, wires the theme and database together, opens the Events Hub.
+
+**F2 · Champagne Rev A Design System**
+`lib/theme/champagne_theme.dart` — Every color, font (Prata/Jost), corner radius, and animation timing for the whole app. The only file where style values are allowed to exist.
+
+**F3 · Events Hub Screen**
+`lib/screens/home_screen.dart` — The home screen: list of event cards, the "Every celebration starts here" empty state, and the Create event button.
+
+**F4 · Create & Edit Event Screen**
+`lib/screens/event_create_screen.dart` — The four-step flow (type → tradition → name → date/venue). Only the name is required. Doubles as the edit screen.
+
+**F5 · Event Dashboard Screen**
+`lib/screens/event_dashboard_screen.dart` — Opens when you tap an event: masthead on top, six "coming soon" module cards, edit and delete buttons. Delete asks "Delete Sofía & Miguel? This can't be undone."
+
+**F6 · Event Masthead (signature component)**
+`lib/widgets/event_masthead.dart` — The invitation-style header: name in Prata with the gold "&", uppercase letterspaced date · venue, satin gold progress bar, status line.
+
+**F7 · Module Card**
+`lib/widgets/module_card.dart` — The small dashboard tiles (Checklist, Budget, Guests, Seating, Templates, Run of show).
+
+**F8 · App Text (strings map)**
+`lib/strings/app_strings.dart` — Every word the user reads, in one file, ready for Spanish translation in v1.x (D-003).
+
+---
+
+## BACK END — where the data lives (on the user's device)
+
+**B1 · Database Definition**
+`lib/data/app_database.dart` — The drift/SQLite database: the events table and how it opens on each platform (phone, desktop, web demo).
+
+**B2 · Generated Database Helper**
+`lib/data/app_database.g.dart` — ⚠️ You don't write this one. It's created on your machine by running `dart run build_runner build --delete-conflicting-outputs` (SETUP.md step 4). Commit it once generated.
+
+**B3 · Event Repository**
+`lib/data/event_repository.dart` — The middleman: screens ask it to create, read, update, delete, and watch events. Screens never touch the database directly.
+
+**B4 · Event Model**
+`lib/models/event.dart` — The shape of an event (name, type, tradition, date, venue, guest goal, linked events) per SCHEMA.md.
+
+---
+
+## TESTS — proof the app works
+
+**T1 · Model Tests**
+`test/event_model_test.dart` — Checks the event object copies, clears, and serializes correctly.
+
+**T2 · Database & Persistence Tests**
+`test/event_repository_test.dart` — Proves create → edit → delete works and data survives restart (acceptance criterion 2).
+
+**T3 · Create-Flow Test**
+`test/create_flow_widget_test.dart` — Walks the create flow like a user would and asserts the empty-state copy and the name-required rule.
+
+---
+
+## PROJECT & DOCS — repo housekeeping
+
+**P1 · Dependencies**
+`pubspec.yaml` — The package list (drift, google_fonts, intl, uuid). Replaces the existing one in events_app/.
+
+**P2 · Setup Guide**
+`SETUP.md` — Beginner walkthrough: copy files, install packages, generate B2, run checks, run the app. Place at `events_app/SETUP.md` (or repo root).
+
+**P3 · Corrected README** *(delivered earlier)*
+`README.md` — Repo root. Storage = drift, website = free demo, style-tile warning.
+
+**P4 · Decisions Log Additions** *(delivered earlier)*
+`DECISIONS-additions.md` — Append entries D-016, D-017, D-018 to your existing DECISIONS.log, then delete this helper file.
+
+**P5 · Brief Amendment** *(delivered earlier)*
+`BRIEF-001-amendment-A.md` — Repo root, next to BRIEF-001, so any builder reads both.
+
+---
+
+## Checklist to finish
+
+1. Unzip events_app_champagne_revA.zip into `events_app/` (replace when asked).
+2. Delete old files that import shared_preferences.
+3. Follow SETUP.md steps 3–5 (this creates file B2).
+4. Add P3–P5 at the repo root.
+5. Commit and push: `git add -A && git commit -m "Champagne rev A — BRIEF-001 build" && git push`
