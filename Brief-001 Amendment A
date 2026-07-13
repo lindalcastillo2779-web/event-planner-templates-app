@@ -1,0 +1,29 @@
+# BRIEF-001 — Amendment A (2026-07-12)
+_Read together with BRIEF-001 v0.1. Where they conflict, this amendment wins._
+
+## A1. Storage is decided: drift (D-016)
+- The line "local persistence (drift or isar — pick one, justify in README)" is replaced with: **use drift.**
+- The current scaffold uses shared_preferences. **Replace it entirely** — do not build a compatibility layer or migration; there are no users and no data to migrate.
+- Files affected:
+  - `lib/data/app_database.dart` (new) — drift database with an `events` table matching the Event model in SCHEMA.md. Store enums as text (enum name), dates as ISO-8601 or drift DateTime columns, `linkedEventIds` as a JSON-encoded text column for now (a proper join table arrives with event linking in a later slice).
+  - `lib/data/event_repository.dart` — rewrite against the drift database. Public API (create/read/update/delete/watchAll) stays the same shape so screens don't change.
+  - `pubspec.yaml` — add drift, drift_flutter (or sqlite3_flutter_libs + path_provider), drift_dev + build_runner as dev dependencies; remove shared_preferences.
+  - Web note: the demo build must still work — use drift's WASM/IndexedDB backend (`drift_flutter` handles platform selection). If web persistence proves flaky, in-memory storage on web is acceptable for the demo; note it in README.
+- Acceptance criterion 2 (data survives restart, proven by a test) now applies to the drift implementation.
+
+## A2. Visual tokens: ignore the style-tile image (D-018)
+- IMG_4514 shows the pre-rev-A design (slate text, pill buttons). **Do not sample colors or shapes from it.**
+- Authoritative tokens are the "Champagne tokens, rev A" table in BRIEF-001: graphite #2B2B2E text/primary buttons, 4px rounded-rectangle buttons, pill shape reserved for the progress bar only.
+- Grep-check for `4A4E58` in the codebase must return zero results.
+
+## A3. Web target is the demo (D-017)
+- The Flutter web build deployed to proplanners.app is a free demo. No purchase UI, no paywall, no account screens in this slice (they were already out of scope; this confirms they stay out).
+- Keep the existing GitHub Pages workflow intact; the drift swap must not break the web build (see A1 web note).
+
+## A4. README
+- Replace the repo README with the corrected version supplied by the owner (storage = drift, web = demo/marketing, style-tile warning, monetization notes).
+
+## Updated acceptance criteria (additions)
+9. `grep -r "shared_preferences"` in `events_app/` returns zero results (pubspec included).
+10. `grep -ri "4A4E58"` in `events_app/lib/` returns zero results.
+11. The web build compiles and the demo runs in a browser (persistence on web is best-effort per A1).
