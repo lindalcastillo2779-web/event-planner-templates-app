@@ -49,9 +49,9 @@ https://www.proplanners.app is the **free browser demo and marketing site**. It 
 ### Deploy to GitHub Pages
 
 1. Push your changes to GitHub.
-2. In your GitHub repo, go to **Settings → Pages**.
-3. Under **Build and deployment**, set Source to **GitHub Actions**.
-4. Wait for the workflow named **Deploy Flutter Web to GitHub Pages** to finish.
+2. The workflow named **Deploy Flutter Web to GitHub Pages** runs automatically on every push to `main` and enables GitHub Pages for the repository on its first successful run.
+3. If you want to verify or change the configuration, go to **Settings → Pages** and confirm Source is set to **GitHub Actions**.
+4. Wait for the workflow to finish.
 5. Your site will be live at the GitHub Pages URL shown in the workflow output.
 
 Note: GitHub Pages on a **private** repository requires a paid GitHub plan. If your Pages deployment isn't appearing, check the repo's visibility and your plan.
