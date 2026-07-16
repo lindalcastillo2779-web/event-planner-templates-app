@@ -1,0 +1,83 @@
+import '../models/event.dart';
+
+/// All user-facing text lives here (D-003: strings externalized from day one).
+/// No screen or widget may contain a user-facing string literal.
+class AppStrings {
+  AppStrings._();
+
+  // App
+  static const appTitle = 'ProPlanners';
+
+  // Events Hub
+  static const eventsHubTitle = 'Your events';
+  static const emptyStateMessage =
+      'Every celebration starts here. Create your first event.';
+  static const createEventFab = 'Create event';
+
+  // Create / edit flow
+  static const createEventTitle = 'New event';
+  static const editEventTitle = 'Edit event';
+  static const stepTypeTitle = 'What are you celebrating?';
+  static const stepTraditionTitle = 'Is there a faith tradition?';
+  static const stepNameTitle = 'What should we call it?';
+  static const stepDateTitle = 'When and where?';
+  static const nameHint = 'Sofía & Miguel';
+  static const nameRequired = 'Every event needs a name.';
+  static const venueHint = 'Venue (optional)';
+  static const guestCountHint = 'Guest count goal (optional)';
+  static const pickDate = 'Choose a date';
+  static const changeDate = 'Change date';
+  static const noDateYet = 'No date yet — that\'s fine.';
+  static const skip = 'Skip';
+  static const next = 'Next';
+  static const back = 'Back';
+  static const save = 'Save event';
+  static const saveChanges = 'Save changes';
+
+  // Dashboard
+  static const dateToBeDecided = 'Date to be decided';
+  static const comingSoon = 'coming soon';
+  static const edit = 'Edit';
+  static const delete = 'Delete';
+
+  /// "62% planned · 247 days to go"
+  static String statusLine(int percent, int daysToGo) =>
+      '$percent% planned · $daysToGo days to go';
+  static String statusLinePlannedOnly(int percent) => '$percent% planned';
+  static const dayHasArrived = 'The day is here';
+
+  // Delete confirmation (names the event; no guilt copy)
+  static String deleteConfirmTitle(String eventName) => 'Delete $eventName?';
+  static const deleteConfirmBody = 'This can\'t be undone.';
+  static const deleteConfirmAction = 'Delete';
+  static const cancel = 'Cancel';
+
+  // Modules (placeholder grid)
+  static const moduleChecklist = 'Checklist';
+  static const moduleBudget = 'Budget';
+  static const moduleGuests = 'Guests';
+  static const moduleSeating = 'Seating & floor plan';
+  static const moduleTemplates = 'Templates';
+  static const moduleTimeline = 'Run of show';
+
+  // Enum labels — the only place enum values become words.
+  static String eventTypeLabel(EventType type) => switch (type) {
+        EventType.wedding => 'Wedding',
+        EventType.quinceanera => 'Quinceañera',
+        EventType.baptism => 'Baptism',
+        EventType.firstCommunion => 'First Communion',
+        EventType.confirmation => 'Confirmation',
+        EventType.ordination => 'Ordination',
+        EventType.birthday => 'Birthday',
+        EventType.shower => 'Shower',
+        EventType.anniversary => 'Anniversary',
+        EventType.other => 'Celebration',
+      };
+
+  static String traditionLabel(Tradition tradition) => switch (tradition) {
+        Tradition.catholic => 'Catholic',
+        Tradition.christianNondenominational => 'Christian (non-denominational)',
+        Tradition.other => 'Other tradition',
+        Tradition.none => 'No faith tradition',
+      };
+}
