@@ -1,0 +1,58 @@
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:events_app/data/app_database.dart';
+import 'package:events_app/data/event_repository.dart';
+import 'package:events_app/main.dart';
+import 'package:events_app/strings/app_strings.dart';
+
+void main() {
+  setUpAll(() {
+    // No network in tests — fall back to bundled/default fonts.
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('create flow: empty state → new event appears in hub',
+      (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final repo = EventRepository(db);
+    addTearDown(db.close);
+
+    await tester.pumpWidget(ProPlannersApp(repository: repo));
+    await tester.pumpAndSettle();
+
+    // Empty state uses VOICE.md copy, never "No data" (criterion 5).
+    expect(find.text(AppStrings.emptyStateMessage), findsOneWidget);
+
+    // Open create flow.
+    await tester.tap(find.text(AppStrings.createEventFab));
+    await tester.pumpAndSettle();
+
+    // Step 1: pick Wedding.
+    await tester.tap(find.text('Wedding'));
+    await tester.pump();
+    await tester.tap(find.text(AppStrings.next));
+    await tester.pumpAndSettle();
+
+    // Step 2: skip tradition.
+    await tester.tap(find.text(AppStrings.skip));
+    await tester.pumpAndSettle();
+
+    // Step 3: name is required — Next without a name shows the error.
+    await tester.tap(find.text(AppStrings.next));
+    await tester.pump();
+    expect(find.text(AppStrings.nameRequired), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'Sofía & Miguel');
+    await tester.tap(find.text(AppStrings.next));
+    await tester.pumpAndSettle();
+
+    // Step 4: save without a date (skippable).
+    await tester.tap(find.text(AppStrings.save));
+    await tester.pumpAndSettle();
+
+    // Back in the hub: the card is there, empty state is gone.
+    expect(find.text('Sofía & Miguel'), findsOneWidget);
+    expect(find.text(AppStrings.emptyStateMessage), findsNothing);
+  });
+}
