@@ -1,0 +1,107 @@
+# SETUP — Installing this code (beginner version)
+
+You already have a Flutter project at `events_app/` in your repo. These steps
+replace its code with the Champagne rev A build. Each step is one command or
+one action — copy and paste exactly.
+
+## 1. Back up what's there (30 seconds, just in case)
+
+```
+cd events_app
+git add -A && git commit -m "checkpoint before Champagne rev A code drop"
+```
+
+## 2. Copy the new files in
+
+From this package, copy into your `events_app/` folder, replacing when asked:
+
+- `pubspec.yaml` → replaces `events_app/pubspec.yaml`
+- everything in `lib/` → replaces `events_app/lib/`
+- everything in `test/` → replaces `events_app/test/`
+
+Delete any leftover old files in `lib/` that aren't in the new set
+(e.g., anything importing shared_preferences).
+
+## 3. Install the packages
+
+```
+flutter pub get
+```
+
+## 4. Generate the database code (one extra step, required once)
+
+Drift builds a helper file (`app_database.g.dart`) from the table definition.
+Run:
+
+```
+dart run build_runner build --delete-conflicting-outputs
+```
+
+You'll see a new file appear at `lib/data/app_database.g.dart`. That's normal —
+commit it with the rest.
+
+## 5. Check and test
+
+```
+flutter analyze
+flutter test
+```
+
+Both should come back clean. If `flutter test` complains about sqlite3 on your
+machine, run `flutter pub add sqlite3_flutter_libs` and try again.
+
+## 6. Run it
+
+```
+flutter run
+```
+
+Pick your device when prompted (iPhone simulator, Android emulator, or
+desktop).
+
+## 7. Verify the acceptance checks from Amendment A
+
+```
+grep -r "shared_preferences" . --include="*.dart" --include="*.yaml"
+grep -ri "4A4E58" lib/
+```
+
+Both must return nothing.
+
+## What you should see
+
+- An empty hub that says "Every celebration starts here. Create your first
+  event."
+- Tap **Create event** → four steps (type → tradition → name → date). Only the
+  name is required.
+- Create "Sofía & Miguel", Wedding, Catholic, June 14 2027, San Fernando
+  Cathedral → the hub shows the card; tapping it opens the dashboard with the
+  masthead (gold "&", uppercase letterspaced date · venue, satin progress bar
+  that fills on entry) and six "coming soon" module cards.
+- Edit (pencil icon) and Delete (trash icon, asks "Delete Sofía & Miguel?
+  This can't be undone.") work from the dashboard.
+- Kill the app and reopen — your events are still there.
+
+## Notes for the reviewer (acceptance criteria mapping)
+
+1. analyze/test clean — step 5. Multi-platform: drift_flutter selects the
+   right backend per platform, including WASM on web.
+2. CRUD round-trip + persistence — proven in `test/event_repository_test.dart`.
+3. Zero hardcoded styles — all tokens live in `lib/theme/champagne_theme.dart`
+   (grep for `Color(0x` outside the theme file returns nothing).
+4. Masthead at large font scales — Prata name wraps and centers; verify
+   manually at iOS accessibility sizes (manual note per criterion 7 pattern).
+5. Empty-state copy — asserted in the widget test.
+6. Delete confirmation names the event — `AppStrings.deleteConfirmTitle`.
+7. Reduce-motion — Hero is skipped and the progress fill is instant when
+   `MediaQuery.disableAnimations` is true (see home_screen, dashboard,
+   event_masthead, create screen page transitions).
+8. Beginner run instructions — this file + README.
+
+## Known limits of this slice (by design)
+
+- The "% planned" number is a stub computed from filled fields (date, venue,
+  guest goal). Real checklist-driven progress arrives with the checklist
+  module in a later slice.
+- Module cards are disabled placeholders — per BRIEF-001 scope.
+- `linkedEventIds` is stored but unused until event linking ships.
