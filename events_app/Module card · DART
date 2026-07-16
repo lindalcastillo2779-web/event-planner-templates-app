@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+
+import '../strings/app_strings.dart';
+import '../theme/champagne_theme.dart';
+
+/// Placeholder module card for the dashboard grid.
+/// Disabled in this slice, labeled with a quiet "coming soon".
+class ModuleCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const ModuleCard({super.key, required this.title, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: c.secondaryText, size: 28),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: text.bodyMedium!.copyWith(color: c.secondaryText),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            Text(AppStrings.comingSoon, style: text.bodySmall),
+          ],
+        ),
+      ),
+    );
+  }
+}
