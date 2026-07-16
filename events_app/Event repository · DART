@@ -1,0 +1,65 @@
+import 'package:drift/drift.dart';
+
+import '../models/event.dart' as model;
+import 'app_database.dart';
+
+/// CRUD + reactive stream over the drift database.
+/// Screens depend only on this class, never on drift directly.
+class EventRepository {
+  final AppDatabase db;
+
+  EventRepository(this.db);
+
+  Stream<List<model.Event>> watchAll() {
+    final query = db.select(db.events)
+      ..orderBy([
+        (t) => OrderingTerm(expression: t.date, mode: OrderingMode.asc),
+        (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.asc),
+      ]);
+    return query.watch().map((rows) => rows.map(_toModel).toList());
+  }
+
+  Future<model.Event?> getById(String id) async {
+    final row = await (db.select(db.events)..where((t) => t.id.equals(id)))
+        .getSingleOrNull();
+    return row == null ? null : _toModel(row);
+  }
+
+  Future<void> create(model.Event event) =>
+      db.into(db.events).insert(_toCompanion(event));
+
+  Future<void> update(model.Event event) =>
+      (db.update(db.events)..where((t) => t.id.equals(event.id)))
+          .write(_toCompanion(event));
+
+  Future<void> delete(String id) =>
+      (db.delete(db.events)..where((t) => t.id.equals(id))).go();
+
+  // Mapping ------------------------------------------------------------
+
+  model.Event _toModel(EventRow row) => model.Event(
+        id: row.id,
+        name: row.name,
+        eventType: model.EventType.values.byName(row.eventType),
+        tradition: model.Tradition.values.byName(row.tradition),
+        date: row.date,
+        venueName: row.venueName,
+        guestCountTarget: row.guestCountTarget,
+        linkedEventIds: model.Event.decodeLinkedIds(row.linkedEventIds),
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+      );
+
+  EventsCompanion _toCompanion(model.Event e) => EventsCompanion(
+        id: Value(e.id),
+        name: Value(e.name),
+        eventType: Value(e.eventType.name),
+        tradition: Value(e.tradition.name),
+        date: Value(e.date),
+        venueName: Value(e.venueName),
+        guestCountTarget: Value(e.guestCountTarget),
+        linkedEventIds: Value(model.Event.encodeLinkedIds(e.linkedEventIds)),
+        createdAt: Value(e.createdAt),
+        updatedAt: Value(e.updatedAt),
+      );
+}
