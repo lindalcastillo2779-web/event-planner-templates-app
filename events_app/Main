@@ -1,0 +1,30 @@
+import 'package:flutter/material.dart';
+
+import 'data/app_database.dart';
+import 'data/event_repository.dart';
+import 'screens/home_screen.dart';
+import 'strings/app_strings.dart';
+import 'theme/champagne_theme.dart';
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  final repository = EventRepository(AppDatabase());
+  runApp(ProPlannersApp(repository: repository));
+}
+
+class ProPlannersApp extends StatelessWidget {
+  final EventRepository repository;
+
+  const ProPlannersApp({super.key, required this.repository});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: AppStrings.appTitle,
+      debugShowCheckedModeBanner: false,
+      theme: buildChampagneTheme(brightness: Brightness.light),
+      darkTheme: buildChampagneTheme(brightness: Brightness.dark),
+      home: HomeScreen(repository: repository),
+    );
+  }
+}
