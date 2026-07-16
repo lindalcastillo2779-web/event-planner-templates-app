@@ -1,0 +1,56 @@
+name: Generate database code
+
+# Runs drift's code generator in the cloud and commits the result,
+# so no local computer is needed. Start it manually from the Actions tab,
+# or it runs automatically when app_database.dart or pubspec.yaml changes.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'events_app/lib/data/app_database.dart'
+      - 'events_app/pubspec.yaml'
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: events_app
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Generate app_database.g.dart
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Commit the generated file back to the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/data/app_database.g.dart
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit — file already up to date."
+          else
+            git commit -m "chore: generate drift database code [skip ci]"
+            git push
+          fi
+
+      # Bonus: verify the acceptance criteria in the cloud too.
+      - name: Run flutter analyze
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
