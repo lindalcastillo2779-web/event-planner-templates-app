@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+
+import '../data/event_repository.dart';
+import '../models/event.dart';
+import '../strings/app_strings.dart';
+import '../theme/champagne_theme.dart';
+import '../widgets/event_masthead.dart';
+import '../widgets/module_card.dart';
+import 'event_create_screen.dart';
+
+/// Event dashboard: masthead (signature) + placeholder module grid.
+/// Watches the repository so edits reflect immediately.
+class EventDashboardScreen extends StatelessWidget {
+  final String eventId;
+  final EventRepository repository;
+
+  const EventDashboardScreen({
+    super.key,
+    required this.eventId,
+    required this.repository,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+
+    return StreamBuilder<List<Event>>(
+      stream: repository.watchAll(),
+      builder: (context, snapshot) {
+        final event = snapshot.data
+            ?.where((e) => e.id == eventId)
+            .cast<Event?>()
+            .firstOrNull;
+        if (event == null) {
+          // Deleted or still loading — show an empty scaffold.
+          return const Scaffold(body: SizedBox.shrink());
+        }
+
+        final masthead = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: EventMasthead(event: event),
+        );
+
+        return Scaffold(
+          appBar: AppBar(
+            actions: [
+              IconButton(
+                tooltip: AppStrings.edit,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EventCreateScreen(
+                      repository: repository,
+                      existing: event,
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: AppStrings.delete,
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _confirmDelete(context, event),
+              ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.only(bottom: 32),
+            children: [
+              // Hero pairs with the event card; skipped under reduce-motion.
+              if (reduceMotion)
+                masthead
+              else
+                Hero(
+                  tag: 'event-${event.id}',
+                  child: Material(type: MaterialType.transparency, child: masthead),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.4,
+                  children: const [
+                    ModuleCard(
+                        title: AppStrings.moduleChecklist,
+                        icon: Icons.checklist_outlined),
+                    ModuleCard(
+                        title: AppStrings.moduleBudget,
+                        icon: Icons.savings_outlined),
+                    ModuleCard(
+                        title: AppStrings.moduleGuests,
+                        icon: Icons.people_outline),
+                    ModuleCard(
+                        title: AppStrings.moduleSeating,
+                        icon: Icons.table_restaurant_outlined),
+                    ModuleCard(
+                        title: AppStrings.moduleTemplates,
+                        icon: Icons.auto_awesome_outlined),
+                    ModuleCard(
+                        title: AppStrings.moduleTimeline,
+                        icon: Icons.schedule_outlined),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context, Event event) async {
+    final c = ChampagneTheme.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppStrings.deleteConfirmTitle(event.name)),
+        content: const Text(AppStrings.deleteConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(AppStrings.cancel),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: c.danger),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(AppStrings.deleteConfirmAction),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await repository.delete(event.id);
+      if (context.mounted) Navigator.of(context).pop();
+    }
+  }
+}
