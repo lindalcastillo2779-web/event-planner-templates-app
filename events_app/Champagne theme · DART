@@ -1,0 +1,213 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+/// Champagne rev A (D-015). Every color, radius, and duration in the app
+/// comes from this extension — no hardcoded style values in screens/widgets.
+@immutable
+class ChampagneTheme extends ThemeExtension<ChampagneTheme> {
+  // Core palette
+  final Color pearl; // app background
+  final Color champagne; // soft fills, progress tracks, disabled fills
+  final Color gold; // accent, progress fill, secondary-button borders
+  final Color blush; // subtle highlights only
+  final Color graphite; // primary text, primary buttons
+  final Color secondaryText;
+  final Color border;
+  final Color goldText; // gold-as-text, darkened for AA contrast
+  final Color surface; // cards
+
+  // Semantic
+  final Color success;
+  final Color warning;
+  final Color danger;
+
+  // Shape
+  final double radiusControl; // buttons + inputs: 4
+  final double radiusCard; // 12
+  final double radiusPill; // 999 — progress bars ONLY
+
+  // Motion (250–300ms ease-out)
+  final Duration motion;
+  final Curve curve;
+
+  // Layout
+  final double mastheadProgressMaxWidth; // 340
+
+  const ChampagneTheme({
+    required this.pearl,
+    required this.champagne,
+    required this.gold,
+    required this.blush,
+    required this.graphite,
+    required this.secondaryText,
+    required this.border,
+    required this.goldText,
+    required this.surface,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    this.radiusControl = 4,
+    this.radiusCard = 12,
+    this.radiusPill = 999,
+    this.motion = const Duration(milliseconds: 280),
+    this.curve = Curves.easeOut,
+    this.mastheadProgressMaxWidth = 340,
+  });
+
+  static const light = ChampagneTheme(
+    pearl: Color(0xFFFBF9F5),
+    champagne: Color(0xFFEFE6D8),
+    gold: Color(0xFFC0A062),
+    blush: Color(0xFFD8B7A5),
+    graphite: Color(0xFF2B2B2E),
+    secondaryText: Color(0xFF7E7869),
+    border: Color(0xFFE6E0D4),
+    goldText: Color(0xFF8A6E35),
+    surface: Color(0xFFFFFFFF),
+    success: Color(0xFF5B7A5E),
+    warning: Color(0xFFA9762B),
+    danger: Color(0xFFA04141),
+  );
+
+  static const dark = ChampagneTheme(
+    pearl: Color(0xFF1E1E21), // bg
+    champagne: Color(0xFF2A2822), // surfaces / fills
+    gold: Color(0xFFC0A062), // unchanged
+    blush: Color(0xFFD8B7A5), // unchanged
+    graphite: Color(0xFFF2EFE8), // primary text on dark
+    secondaryText: Color(0xFFB5AFA2),
+    border: Color(0xFF3A382F),
+    goldText: Color(0xFFC0A062), // full gold passes on dark bg
+    surface: Color(0xFF2A2822),
+    success: Color(0xFF5B7A5E),
+    warning: Color(0xFFA9762B),
+    danger: Color(0xFFA04141),
+  );
+
+  static ChampagneTheme of(BuildContext context) =>
+      Theme.of(context).extension<ChampagneTheme>()!;
+
+  @override
+  ChampagneTheme copyWith() => this;
+
+  @override
+  ChampagneTheme lerp(ChampagneTheme? other, double t) =>
+      t < 0.5 ? this : (other ?? this);
+}
+
+/// Builds the Material ThemeData from Champagne tokens.
+ThemeData buildChampagneTheme({required Brightness brightness}) {
+  final c =
+      brightness == Brightness.dark ? ChampagneTheme.dark : ChampagneTheme.light;
+
+  final textTheme = TextTheme(
+    // Prata — display only (event names, screen titles)
+    displayLarge: GoogleFonts.prata(color: c.graphite, fontSize: 40),
+    displayMedium: GoogleFonts.prata(color: c.graphite, fontSize: 32),
+    headlineMedium: GoogleFonts.prata(color: c.graphite, fontSize: 24),
+    titleLarge: GoogleFonts.prata(color: c.graphite, fontSize: 20),
+    // Jost — all UI/body
+    bodyLarge: GoogleFonts.jost(color: c.graphite, fontSize: 16),
+    bodyMedium: GoogleFonts.jost(color: c.graphite, fontSize: 14),
+    bodySmall: GoogleFonts.jost(color: c.secondaryText, fontSize: 13),
+    labelLarge: GoogleFonts.jost(
+        color: c.graphite, fontSize: 15, fontWeight: FontWeight.w500),
+    // Letterspaced uppercase label (date/venue) — ~3px tracking
+    labelSmall: GoogleFonts.jost(
+        color: c.secondaryText, fontSize: 13, letterSpacing: 3),
+  );
+
+  final controlShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(c.radiusControl),
+  );
+
+  return ThemeData(
+    useMaterial3: true,
+    brightness: brightness,
+    scaffoldBackgroundColor: c.pearl,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: c.gold,
+      brightness: brightness,
+      primary: c.graphite,
+      secondary: c.gold,
+      surface: c.surface,
+      error: c.danger,
+    ),
+    textTheme: textTheme,
+    extensions: [c],
+    appBarTheme: AppBarTheme(
+      backgroundColor: c.pearl,
+      foregroundColor: c.graphite,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: textTheme.titleLarge,
+    ),
+    cardTheme: CardTheme(
+      color: c.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(c.radiusCard),
+        side: BorderSide(color: c.border),
+      ),
+      margin: EdgeInsets.zero,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: c.graphite,
+        foregroundColor: c.pearl,
+        shape: controlShape,
+        elevation: 0,
+        minimumSize: const Size(44, 48),
+        textStyle: textTheme.labelLarge,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: c.goldText,
+        side: BorderSide(color: c.gold),
+        shape: controlShape,
+        minimumSize: const Size(44, 48),
+        textStyle: textTheme.labelLarge,
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: c.goldText,
+        shape: controlShape,
+        minimumSize: const Size(44, 44),
+        textStyle: textTheme.labelLarge,
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: c.surface,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(c.radiusControl),
+        borderSide: BorderSide(color: c.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(c.radiusControl),
+        borderSide: BorderSide(color: c.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(c.radiusControl),
+        borderSide: BorderSide(color: c.gold, width: 1.5),
+      ),
+      hintStyle: textTheme.bodyMedium!.copyWith(color: c.secondaryText),
+    ),
+    dividerTheme: DividerThemeData(color: c.border, thickness: 1),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.graphite,
+      foregroundColor: c.pearl,
+      shape: controlShape,
+    ),
+    dialogTheme: DialogTheme(
+      backgroundColor: c.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(c.radiusCard),
+      ),
+      titleTextStyle: textTheme.titleLarge,
+      contentTextStyle: textTheme.bodyMedium,
+    ),
+  );
+}
