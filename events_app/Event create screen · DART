@@ -1,0 +1,339 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
+import '../data/event_repository.dart';
+import '../models/event.dart';
+import '../strings/app_strings.dart';
+import '../theme/champagne_theme.dart';
+
+/// Four-step create flow: type → tradition → name → date/venue.
+/// Every step is skippable except the name. Also serves as the edit screen
+/// when [existing] is provided.
+class EventCreateScreen extends StatefulWidget {
+  final EventRepository repository;
+  final Event? existing;
+
+  const EventCreateScreen({super.key, required this.repository, this.existing});
+
+  @override
+  State<EventCreateScreen> createState() => _EventCreateScreenState();
+}
+
+class _EventCreateScreenState extends State<EventCreateScreen> {
+  final _pageController = PageController();
+  final _nameController = TextEditingController();
+  final _venueController = TextEditingController();
+  final _guestController = TextEditingController();
+
+  int _step = 0;
+  EventType _type = EventType.other;
+  Tradition _tradition = Tradition.none;
+  DateTime? _date;
+  String? _nameError;
+
+  bool get _isEdit => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.existing;
+    if (e != null) {
+      _type = e.eventType;
+      _tradition = e.tradition;
+      _date = e.date;
+      _nameController.text = e.name;
+      _venueController.text = e.venueName ?? '';
+      _guestController.text = e.guestCountTarget?.toString() ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _nameController.dispose();
+    _venueController.dispose();
+    _guestController.dispose();
+    super.dispose();
+  }
+
+  void _goTo(int step) {
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    setState(() => _step = step);
+    if (reduceMotion) {
+      _pageController.jumpToPage(step);
+    } else {
+      final c = ChampagneTheme.of(context);
+      _pageController.animateToPage(step, duration: c.motion, curve: c.curve);
+    }
+  }
+
+  Future<void> _save() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _nameError = AppStrings.nameRequired);
+      _goTo(2);
+      return;
+    }
+    final now = DateTime.now();
+    final venue = _venueController.text.trim();
+    final guests = int.tryParse(_guestController.text.trim());
+
+    if (_isEdit) {
+      final updated = widget.existing!.copyWith(
+        name: name,
+        eventType: _type,
+        tradition: _tradition,
+        date: _date,
+        clearDate: _date == null,
+        venueName: venue.isEmpty ? null : venue,
+        clearVenue: venue.isEmpty,
+        guestCountTarget: guests,
+        clearGuestCount: guests == null,
+        updatedAt: now,
+      );
+      await widget.repository.update(updated);
+    } else {
+      final event = Event(
+        id: const Uuid().v4(),
+        name: name,
+        eventType: _type,
+        tradition: _tradition,
+        date: _date,
+        venueName: venue.isEmpty ? null : venue,
+        guestCountTarget: guests,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await widget.repository.create(event);
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ChampagneTheme.of(context);
+    final isLast = _step == 3;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+            _isEdit ? AppStrings.editEventTitle : AppStrings.createEventTitle),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _typeStep(),
+                  _traditionStep(),
+                  _nameStep(),
+                  _dateStep(),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  if (_step > 0)
+                    TextButton(
+                      onPressed: () => _goTo(_step - 1),
+                      child: const Text(AppStrings.back),
+                    ),
+                  const Spacer(),
+                  // Name step (index 2) is the only non-skippable step.
+                  if (!isLast && _step != 2)
+                    TextButton(
+                      onPressed: () => _goTo(_step + 1),
+                      child: const Text(AppStrings.skip),
+                    ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: isLast
+                        ? _save
+                        : () {
+                            if (_step == 2 &&
+                                _nameController.text.trim().isEmpty) {
+                              setState(() =>
+                                  _nameError = AppStrings.nameRequired);
+                              return;
+                            }
+                            _goTo(_step + 1);
+                          },
+                    child: Text(isLast
+                        ? (_isEdit
+                            ? AppStrings.saveChanges
+                            : AppStrings.save)
+                        : AppStrings.next),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      backgroundColor: c.pearl,
+    );
+  }
+
+  Widget _stepScaffold(String title, Widget child) {
+    final text = Theme.of(context).textTheme;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: text.headlineMedium, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _typeStep() {
+    return _stepScaffold(
+      AppStrings.stepTypeTitle,
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
+        children: [
+          for (final type in EventType.values)
+            _choiceChip(
+              label: AppStrings.eventTypeLabel(type),
+              selected: _type == type,
+              onTap: () => setState(() => _type = type),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _traditionStep() {
+    return _stepScaffold(
+      AppStrings.stepTraditionTitle,
+      Column(
+        children: [
+          for (final tradition in Tradition.values)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _choiceChip(
+                label: AppStrings.traditionLabel(tradition),
+                selected: _tradition == tradition,
+                onTap: () => setState(() => _tradition = tradition),
+                fullWidth: true,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nameStep() {
+    return _stepScaffold(
+      AppStrings.stepNameTitle,
+      TextField(
+        controller: _nameController,
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          hintText: AppStrings.nameHint,
+          errorText: _nameError,
+        ),
+        onChanged: (_) {
+          if (_nameError != null) setState(() => _nameError = null);
+        },
+      ),
+    );
+  }
+
+  Widget _dateStep() {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+    return _stepScaffold(
+      AppStrings.stepDateTitle,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton(
+            onPressed: () async {
+              final now = DateTime.now();
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _date ?? now,
+                firstDate: DateTime(now.year - 1),
+                lastDate: DateTime(now.year + 10),
+              );
+              if (picked != null) setState(() => _date = picked);
+            },
+            child: Text(_date == null
+                ? AppStrings.pickDate
+                : '${AppStrings.changeDate} · ${DateFormat('MMM d, y').format(_date!)}'),
+          ),
+          if (_date == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                AppStrings.noDateYet,
+                style: text.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _venueController,
+            decoration:
+                const InputDecoration(hintText: AppStrings.venueHint),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _guestController,
+            keyboardType: TextInputType.number,
+            decoration:
+                const InputDecoration(hintText: AppStrings.guestCountHint),
+          ),
+          const SizedBox(height: 8),
+          Divider(color: c.border),
+        ],
+      ),
+    );
+  }
+
+  Widget _choiceChip({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    bool fullWidth = false,
+  }) {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+    final chip = Material(
+      color: selected ? c.champagne : c.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(c.radiusControl),
+        side: BorderSide(color: selected ? c.gold : c.border),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(c.radiusControl),
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: text.bodyMedium!.copyWith(
+              color: selected ? c.goldText : c.graphite,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+    return fullWidth ? SizedBox(width: double.infinity, child: chip) : chip;
+  }
+}
