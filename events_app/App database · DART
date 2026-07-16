@@ -1,0 +1,40 @@
+import 'package:drift/drift.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+
+part 'app_database.g.dart';
+
+/// Drift table for events. Enums stored as their name (text); linked ids as
+/// a JSON-encoded text column until a proper join table arrives (Amendment A1).
+@DataClassName('EventRow')
+class Events extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get eventType => text()();
+  TextColumn get tradition => text()();
+  DateTimeColumn get date => dateTime().nullable()();
+  TextColumn get venueName => text().nullable()();
+  IntColumn get guestCountTarget => integer().nullable()();
+  TextColumn get linkedEventIds => text().withDefault(const Constant('[]'))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Events])
+class AppDatabase extends _$AppDatabase {
+  AppDatabase() : super(_openConnection());
+
+  /// Test constructor — pass NativeDatabase.memory() in tests.
+  AppDatabase.forTesting(super.executor);
+
+  @override
+  int get schemaVersion => 1;
+
+  static QueryExecutor _openConnection() {
+    // drift_flutter picks the right backend per platform,
+    // including WASM/IndexedDB on web (keeps the demo working — A1).
+    return driftDatabase(name: 'proplanners');
+  }
+}
