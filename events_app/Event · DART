@@ -1,0 +1,111 @@
+import 'dart:convert';
+
+enum EventType {
+  wedding,
+  quinceanera,
+  baptism,
+  firstCommunion,
+  confirmation,
+  ordination,
+  birthday,
+  shower,
+  anniversary,
+  other,
+}
+
+enum Tradition {
+  catholic,
+  christianNondenominational,
+  other,
+  none,
+}
+
+/// Core event model (SCHEMA.md). Immutable; use [copyWith] for edits.
+class Event {
+  final String id; // uuid v4
+  final String name;
+  final EventType eventType;
+  final Tradition tradition;
+  final DateTime? date;
+  final String? venueName;
+  final int? guestCountTarget;
+  final List<String> linkedEventIds;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const Event({
+    required this.id,
+    required this.name,
+    required this.eventType,
+    required this.tradition,
+    this.date,
+    this.venueName,
+    this.guestCountTarget,
+    this.linkedEventIds = const [],
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  Event copyWith({
+    String? name,
+    EventType? eventType,
+    Tradition? tradition,
+    DateTime? date,
+    bool clearDate = false,
+    String? venueName,
+    bool clearVenue = false,
+    int? guestCountTarget,
+    bool clearGuestCount = false,
+    List<String>? linkedEventIds,
+    DateTime? updatedAt,
+  }) {
+    return Event(
+      id: id,
+      name: name ?? this.name,
+      eventType: eventType ?? this.eventType,
+      tradition: tradition ?? this.tradition,
+      date: clearDate ? null : (date ?? this.date),
+      venueName: clearVenue ? null : (venueName ?? this.venueName),
+      guestCountTarget:
+          clearGuestCount ? null : (guestCountTarget ?? this.guestCountTarget),
+      linkedEventIds: linkedEventIds ?? this.linkedEventIds,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? DateTime.now(),
+    );
+  }
+
+  /// Fraction of planning fields filled (stub until checklists arrive in a
+  /// later slice — drives the masthead progress bar deterministically).
+  double get plannedFraction {
+    var filled = 0;
+    const total = 3;
+    if (date != null) filled++;
+    if (venueName != null && venueName!.trim().isNotEmpty) filled++;
+    if (guestCountTarget != null) filled++;
+    return filled / total;
+  }
+
+  static String encodeLinkedIds(List<String> ids) => jsonEncode(ids);
+
+  static List<String> decodeLinkedIds(String raw) {
+    if (raw.isEmpty) return const [];
+    final decoded = jsonDecode(raw);
+    if (decoded is List) return decoded.cast<String>();
+    return const [];
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is Event &&
+      other.id == id &&
+      other.name == name &&
+      other.eventType == eventType &&
+      other.tradition == tradition &&
+      other.date == date &&
+      other.venueName == venueName &&
+      other.guestCountTarget == guestCountTarget;
+
+  @override
+  int get hashCode => Object.hash(
+      id, name, eventType, tradition, date, venueName, guestCountTarget);
+}
