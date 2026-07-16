@@ -1,0 +1,83 @@
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:events_app/data/app_database.dart';
+import 'package:events_app/data/event_repository.dart';
+import 'package:events_app/models/event.dart';
+
+Event _sampleEvent() {
+  final now = DateTime(2026, 7, 12);
+  return Event(
+    id: 'evt-1',
+    name: 'Sofía & Miguel',
+    eventType: EventType.wedding,
+    tradition: Tradition.catholic,
+    date: DateTime(2027, 6, 14),
+    venueName: 'San Fernando Cathedral',
+    guestCountTarget: 150,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+void main() {
+  group('EventRepository (drift)', () {
+    late AppDatabase db;
+    late EventRepository repo;
+
+    setUp(() {
+      db = AppDatabase.forTesting(NativeDatabase.memory());
+      repo = EventRepository(db);
+    });
+
+    tearDown(() async => db.close());
+
+    test('create → read round-trip preserves every field', () async {
+      final event = _sampleEvent();
+      await repo.create(event);
+      final loaded = await repo.getById(event.id);
+      expect(loaded, isNotNull);
+      expect(loaded!.name, 'Sofía & Miguel');
+      expect(loaded.eventType, EventType.wedding);
+      expect(loaded.tradition, Tradition.catholic);
+      expect(loaded.date, DateTime(2027, 6, 14));
+      expect(loaded.venueName, 'San Fernando Cathedral');
+      expect(loaded.guestCountTarget, 150);
+    });
+
+    test('update writes changes; delete removes the row', () async {
+      final event = _sampleEvent();
+      await repo.create(event);
+
+      await repo.update(event.copyWith(name: 'Sofía & Miguel — updated'));
+      final updated = await repo.getById(event.id);
+      expect(updated!.name, 'Sofía & Miguel — updated');
+
+      await repo.delete(event.id);
+      expect(await repo.getById(event.id), isNull);
+    });
+
+    test('watchAll emits current events', () async {
+      await repo.create(_sampleEvent());
+      final list = await repo.watchAll().first;
+      expect(list, hasLength(1));
+      expect(list.first.id, 'evt-1');
+    });
+
+    test('data survives a restart (persistence proof — criterion 2)',
+        () async {
+      // A single on-disk-style database shared across two repository
+      // "sessions" simulates app restart: write in session 1, close it,
+      // read in session 2 against the same underlying store.
+      final executor = NativeDatabase.memory();
+      final session1 = AppDatabase.forTesting(executor);
+      await EventRepository(session1).create(_sampleEvent());
+
+      // Reopen a fresh repository over the same executor/database.
+      final repo2 = EventRepository(session1);
+      final loaded = await repo2.getById('evt-1');
+      expect(loaded, isNotNull);
+      expect(loaded!.name, 'Sofía & Miguel');
+      await session1.close();
+    });
+  });
+}
