@@ -1,0 +1,148 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../models/event.dart';
+import '../strings/app_strings.dart';
+import '../theme/champagne_theme.dart';
+
+/// The signature component (BRIEF-001):
+/// name in Prata (connector glyphs "&" and "·" in gold) →
+/// date + venue in Jost uppercase, ~3px letterspacing →
+/// satin progress bar (gold on champagne, pill, max 340) →
+/// status line. Progress fill animates on entry unless reduce-motion.
+class EventMasthead extends StatefulWidget {
+  final Event event;
+
+  const EventMasthead({super.key, required this.event});
+
+  @override
+  State<EventMasthead> createState() => _EventMastheadState();
+}
+
+class _EventMastheadState extends State<EventMasthead> {
+  bool _fill = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Trigger the entry animation on the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _fill = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final event = widget.event;
+
+    final fraction = event.plannedFraction;
+    final percent = (fraction * 100).round();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Event name — Prata, graphite, connectors in gold.
+        Text.rich(
+          _nameWithGoldConnectors(event.name, text.displayMedium!, c),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        if (_dateVenueLine(event) != null) ...[
+          Text(
+            _dateVenueLine(event)!,
+            style: text.labelSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+        ],
+        // Satin progress bar — the ONE pill element.
+        ConstrainedBox(
+          constraints:
+              BoxConstraints(maxWidth: c.mastheadProgressMaxWidth),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(c.radiusPill),
+            child: SizedBox(
+              height: 10,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final target = constraints.maxWidth * fraction;
+                  final width =
+                      (reduceMotion || _fill) ? target : 0.0;
+                  return Stack(
+                    children: [
+                      Container(color: c.champagne),
+                      AnimatedContainer(
+                        duration: reduceMotion
+                            ? Duration.zero
+                            : c.motion,
+                        curve: c.curve,
+                        width: width,
+                        color: c.gold,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _statusLine(event, percent),
+          style: text.bodySmall,
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  /// Builds the Prata name span, coloring "&" and "·" gold.
+  TextSpan _nameWithGoldConnectors(
+      String name, TextStyle base, ChampagneTheme c) {
+    final spans = <TextSpan>[];
+    final buffer = StringBuffer();
+    for (final rune in name.runes) {
+      final ch = String.fromCharCode(rune);
+      if (ch == '&' || ch == '·') {
+        if (buffer.isNotEmpty) {
+          spans.add(TextSpan(text: buffer.toString()));
+          buffer.clear();
+        }
+        spans.add(TextSpan(text: ch, style: TextStyle(color: c.gold)));
+      } else {
+        buffer.write(ch);
+      }
+    }
+    if (buffer.isNotEmpty) spans.add(TextSpan(text: buffer.toString()));
+    return TextSpan(style: base, children: spans);
+  }
+
+  String? _dateVenueLine(Event event) {
+    final parts = <String>[];
+    if (event.date != null) {
+      parts.add(DateFormat('MMMM d, y').format(event.date!).toUpperCase());
+    }
+    final venue = event.venueName?.trim();
+    if (venue != null && venue.isNotEmpty) parts.add(venue.toUpperCase());
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
+
+  String _statusLine(Event event, int percent) {
+    final date = event.date;
+    if (date == null) {
+      // Warm, not an error state.
+      return AppStrings.dateToBeDecided;
+    }
+    final now = DateTime.now();
+    final days = DateTime(date.year, date.month, date.day)
+        .difference(DateTime(now.year, now.month, now.day))
+        .inDays;
+    if (days <= 0) return AppStrings.dayHasArrived;
+    return AppStrings.statusLine(percent, days);
+  }
+}
