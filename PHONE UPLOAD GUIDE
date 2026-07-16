@@ -1,0 +1,50 @@
+# PHONE UPLOAD GUIDE — one file at a time, no zip needed
+
+Your repo already has these folders (from the original scaffold), so you're
+replacing files, not creating folders.
+
+## How to upload each file on your phone
+
+1. In your browser, open the repo and tap into the folder listed below.
+2. Tap **Add file → Upload files**.
+3. Choose the file from your phone's Downloads.
+4. Tap **Commit changes**. GitHub replaces the old file automatically when
+   the name matches.
+
+Tip: request the desktop site in your mobile browser if the Add file button
+is hidden (Safari: AA icon → Request Desktop Website; Chrome: ⋮ → Desktop site).
+
+## Where each file goes
+
+| File | Upload into this folder |
+|---|---|
+| pubspec.yaml | events_app/ |
+| SETUP.md | events_app/ |
+| main.dart | events_app/lib/ |
+| champagne_theme.dart | events_app/lib/theme/ |
+| event.dart | events_app/lib/models/ |
+| app_database.dart | events_app/lib/data/ |
+| event_repository.dart | events_app/lib/data/ |
+| home_screen.dart | events_app/lib/screens/ |
+| event_create_screen.dart | events_app/lib/screens/ |
+| event_dashboard_screen.dart | events_app/lib/screens/ |
+| event_masthead.dart | events_app/lib/widgets/ |
+| module_card.dart | events_app/lib/widgets/ |
+| app_strings.dart | events_app/lib/strings/ |
+| event_model_test.dart | events_app/test/ |
+| event_repository_test.dart | events_app/test/ |
+| create_flow_widget_test.dart | events_app/test/ |
+
+If a folder is missing (e.g. lib/data/), use **Add file → Create new file**
+instead, type the path including the folder — for example
+`lib/data/app_database.dart` — then paste the file's contents and commit.
+Typing a `/` in the name box creates the folder.
+
+## After all 16 are up
+
+- Delete any leftover old files in lib/ that mention shared_preferences
+  (open the file → trash-can icon → commit).
+- One step still needs a computer: generating `lib/data/app_database.g.dart`
+  (SETUP.md step 4 — a single command). The app won't build without it, but
+  uploading everything else from your phone now is perfectly fine; run that
+  command whenever you're next at a computer.
