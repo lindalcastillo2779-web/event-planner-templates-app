@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../data/event_repository.dart';
+import '../models/event.dart';
+import '../strings/app_strings.dart';
+import '../theme/champagne_theme.dart';
+import 'event_create_screen.dart';
+import 'event_dashboard_screen.dart';
+
+/// Events Hub: list of event cards + empty state + FAB.
+class HomeScreen extends StatelessWidget {
+  final EventRepository repository;
+
+  const HomeScreen({super.key, required this.repository});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text(AppStrings.eventsHubTitle)),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EventCreateScreen(repository: repository),
+          ),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text(AppStrings.createEventFab),
+      ),
+      body: StreamBuilder<List<Event>>(
+        stream: repository.watchAll(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final events = snapshot.data!;
+          if (events.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.celebration_outlined,
+                        size: 48, color: c.gold),
+                    const SizedBox(height: 16),
+                    Text(
+                      AppStrings.emptyStateMessage,
+                      style: text.bodyLarge!
+                          .copyWith(color: c.secondaryText),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) =>
+                _EventCard(event: events[index], repository: repository),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EventCard extends StatelessWidget {
+  final Event event;
+  final EventRepository repository;
+
+  const _EventCard({required this.event, required this.repository});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = ChampagneTheme.of(context);
+    final text = Theme.of(context).textTheme;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+
+    final subtitleParts = [AppStrings.eventTypeLabel(event.eventType)];
+    if (event.date != null) {
+      subtitleParts.add(DateFormat('MMM d, y').format(event.date!));
+    }
+
+    final card = Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(c.radiusCard),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => EventDashboardScreen(
+              eventId: event.id,
+              repository: repository,
+            ),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(event.name,
+                  style: text.titleLarge, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Text(
+                subtitleParts.join(' · '),
+                style: text.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Hero-animates into the dashboard masthead area;
+    // skipped entirely under reduce-motion (criterion 7).
+    if (reduceMotion) return card;
+    return Hero(tag: 'event-${event.id}', child: card);
+  }
+}
